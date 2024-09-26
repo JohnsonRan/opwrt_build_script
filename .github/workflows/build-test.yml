@@ -1,4 +1,4 @@
-name: Build releases
+name: Build testing
 
 on:
   workflow_dispatch:
@@ -17,7 +17,7 @@ on:
       build_options:
         description: 'Build options (separate multiple options with spaces)'
         required: false
-        default: 'LAN=172.16.1.1 KERNEL_CLANG_LTO=y USE_GCC15=y ENABLE_LTO=y ENABLE_MOLD=y ENABLE_BPF=y ENABLE_LRNG=y BUILD_FAST=y'
+        default: 'LAN=172.16.1.1 TESTING_KERNEL=y KERNEL_CLANG_LTO=y USE_GCC15=y ENABLE_LTO=y ENABLE_MOLD=y ENABLE_BPF=y ENABLE_LRNG=y BUILD_FAST=y'
         type: string
 
 jobs:
@@ -68,7 +68,7 @@ jobs:
         bash <(curl -sS https://raw.githubusercontent.com/${{ github.repository }}/master/openwrt/build.sh) rc2 ${{ github.event.inputs.device }}
         cd openwrt
         tags=$(git describe --abbrev=0 --tags)
-        kernel=$(curl -s "https://raw.githubusercontent.com/${{ github.repository }}/master/tags/kernel-6.6" | awk -F"LINUX_KERNEL_HASH-| =" '/LINUX_KERNEL_HASH/{print $2}')
+        kernel=$(curl -s "https://raw.githubusercontent.com/${{ github.repository }}/master/tags/kernel-6.12" | awk -F"LINUX_KERNEL_HASH-| =" '/LINUX_KERNEL_HASH/{print $2}')
         echo "latest_release=$tags-k$kernel" >>$GITHUB_ENV
 
     - name: Extensive logs after a failed compilation
@@ -118,7 +118,7 @@ jobs:
 
     - name: Create release
       continue-on-error: true
-      uses: ncipollo/release-action@v1
+      uses: ncipollo/release-action@v1.14.0
       with:
         name: OpenWrt-${{ env.latest_release }}
         allowUpdates: true
@@ -141,10 +141,10 @@ jobs:
         for FILE in *; do
         if [ -f "$FILE" ]; then
           echo "Uploading: $FILE"
-          filen-cli upload "$FILE" OpenWrt/kernel-6.6
+          filen-cli upload "$FILE" OpenWrt/kernel-6.12
         fi
         done
-        filen-cli ls -l OpenWrt/kernel-6.6
+        filen-cli ls -l OpenWrt/kernel-6.12
     - name: Delete workflow runs
       uses: Mattraks/delete-workflow-runs@main
       with:
