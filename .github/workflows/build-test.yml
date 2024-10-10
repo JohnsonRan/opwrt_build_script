@@ -1,4 +1,4 @@
-name: Build releases
+name: Build testing
 
 on:
   workflow_dispatch:
@@ -65,10 +65,9 @@ jobs:
       run: |
         export GITHUB_REPO=${{ github.repository }}
         export ${{ github.event.inputs.build_options }}
-        bash <(curl -sS https://raw.githubusercontent.com/${{ github.repository }}/master/openwrt/build.sh) rc2 ${{ github.event.inputs.device }}
-        cd openwrt
-        tags=$(git describe --abbrev=0 --tags)
+        bash <(curl -sS https://raw.githubusercontent.com/${{ github.repository }}/master/openwrt/build.sh) dev ${{ github.event.inputs.device }}
         kernel=$(curl -s "https://raw.githubusercontent.com/${{ github.repository }}/master/tags/kernel-6.12" | awk -F"LINUX_KERNEL_HASH-| =" '/LINUX_KERNEL_HASH/{print $2}')
+        tags=OpenWrt-v24.10 
         echo "latest_release=$tags-k$kernel" >>$GITHUB_ENV
 
     - name: Extensive logs after a failed compilation
@@ -118,9 +117,10 @@ jobs:
 
     - name: Create release
       continue-on-error: true
-      uses: ncipollo/release-action@v1
+      uses: ncipollo/release-action@v1.14.0
       with:
         name: OpenWrt-${{ env.latest_release }}
+        prerelease: true
         allowUpdates: true
         tag: ${{ env.latest_release }}
         commit: master
@@ -141,10 +141,10 @@ jobs:
         for FILE in *; do
         if [ -f "$FILE" ]; then
           echo "Uploading: $FILE"
-          filen-cli upload "$FILE" OpenWrt/OpenWrt-23.05
+          filen-cli upload "$FILE" OpenWrt/OpenWrt-24.10
         fi
         done
-        filen-cli ls -l OpenWrt/OpenWrt-23.05
+        filen-cli ls -l OpenWrt/OpenWrt-24.10
     - name: Delete workflow runs
       uses: Mattraks/delete-workflow-runs@main
       with:
