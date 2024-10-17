@@ -24,31 +24,10 @@ endgroup() {
 #  NanoPi R4S OpenWrt Build Script  #
 #####################################
 
-# IP Location
-ip_info=`curl -sk https://ip.cooluc.com`;
-[ -n "$ip_info" ] && export isCN=`echo $ip_info | grep -Po 'country_code\":"\K[^"]+'` || export isCN=US
-
 # script url
-if [ "$isCN" = "CN" ]; then
-    export mirror=init.cooluc.com
-else
-    export mirror=init2.cooluc.com
-fi
-
-# github actions - automatically retrieve `github raw` links
-if [ "$(whoami)" = "runner" ] && [ -n "$GITHUB_REPO" ]; then
-    export mirror=raw.githubusercontent.com/$GITHUB_REPO/master
-fi
-
-# private gitea
+export mirror=raw.githubusercontent.com/JohnsonRan/opwrt_build_script/master
+export github=github.com
 export gitea=git.cooluc.com
-
-# github mirror
-if [ "$isCN" = "CN" ]; then
-    export github="ghp.ci/github.com"
-else
-    export github="github.com"
-fi
 
 # Check root
 if [ "$(id -u)" = "0" ]; then
@@ -257,6 +236,7 @@ curl -sO https://$mirror/openwrt/scripts/02-prepare_package.sh
 curl -sO https://$mirror/openwrt/scripts/03-convert_translation.sh
 curl -sO https://$mirror/openwrt/scripts/04-fix_kmod.sh
 curl -sO https://$mirror/openwrt/scripts/05-fix-source.sh
+curl -sO https://$mirror/openwrt/scripts/10-customize-config.sh
 curl -sO https://$mirror/openwrt/scripts/99_clean_build_cache.sh
 if [ -n "$git_password" ] && [ -n "$private_url" ]; then
     curl -u openwrt:$git_password -sO "$private_url"

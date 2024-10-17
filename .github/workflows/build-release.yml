@@ -1,4 +1,4 @@
-name: Build releases
+name: Build testing
 
 on:
   workflow_dispatch:
@@ -17,7 +17,7 @@ on:
       build_options:
         description: 'Build options (separate multiple options with spaces)'
         required: false
-        default: 'BUILD_FAST=y ENABLE_BPF=y ENABLE_LTO=y ENABLE_LRNG=y ENABLE_MOLD=y KERNEL_CLANG_LTO=y USE_GCC14=y'
+        default: 'LAN=172.16.1.1 TESTING_KERNEL=y KERNEL_CLANG_LTO=y USE_GCC15=y ENABLE_LTO=y ENABLE_MOLD=y ENABLE_BPF=y ENABLE_LRNG=y BUILD_FAST=y'
         type: string
 
 jobs:
@@ -65,10 +65,10 @@ jobs:
       run: |
         export GITHUB_REPO=${{ github.repository }}
         export ${{ github.event.inputs.build_options }}
-        bash <(curl -sS https://raw.githubusercontent.com/${{ github.repository }}/master/openwrt/build.sh) rc2 ${{ github.event.inputs.device }}
-        cd openwrt
-        tags=$(git describe --abbrev=0 --tags)
-        echo "latest_release=$tags" >>$GITHUB_ENV
+        bash <(curl -sS https://raw.githubusercontent.com/${{ github.repository }}/master/openwrt/build.sh) dev ${{ github.event.inputs.device }}
+        kernel=$(curl -s "https://raw.githubusercontent.com/${{ github.repository }}/master/tags/kernel-6.12" | awk -F"LINUX_KERNEL_HASH-| =" '/LINUX_KERNEL_HASH/{print $2}')
+        tags=v24.10 
+        echo "latest_release=$tags-k$kernel" >>$GITHUB_ENV
 
     - name: Extensive logs after a failed compilation
       working-directory: /builder
@@ -94,7 +94,6 @@ jobs:
         elif [ "${{ github.event.inputs.device }}" = "x86_64" ]; then
           cp -a openwrt/bin/targets/x86/*/*-ext4-combined-efi.img.gz rom/
           cp -a openwrt/bin/targets/x86/*/*-squashfs-combined-efi.img.gz rom/
-          cp -a openwrt/bin/targets/x86/*/*-generic-rootfs.tar.gz rom/
           cp -a openwrt/bin/targets/x86/*/*-x86-64-generic.manifest info/manifest.txt
           cp -a openwrt/bin/targets/x86/*/config.buildinfo info/config.buildinfo
           cd rom && sha256sum *gz > ../info/sha256sums.txt
@@ -118,7 +117,7 @@ jobs:
 
     - name: Create release
       continue-on-error: true
-      uses: ncipollo/release-action@v1
+      uses: ncipollo/release-action@v1.14.0
       with:
         name: OpenWrt-${{ env.latest_release }}
         allowUpdates: true
@@ -127,3 +126,28 @@ jobs:
         replacesArtifacts: true
         token: ${{ secrets.GITHUB_TOKEN }}
         artifacts: ${{ env.WORKDIR }}/rom/*
+
+    - name: Upload to Filen
+      id: upload
+      continue-on-error: true
+      working-directory: /builder/rom
+      timeout-minutes: 10
+      run: | 
+        sudo curl -skLo /bin/filen-cli https://github.com/FilenCloudDienste/filen-cli/releases/download/v0.0.12/filen-cli-v0.0.12-linux-x64
+        sudo chmod 0755 /bin/filen-cli
+        export FILEN_EMAIL="${{ secrets.FILEN_EMAIL }}"
+        export FILEN_PASSWORD="${{ secrets.FILEN_PWD }}"
+        for FILE in *; do
+        if [ -f "$FILE" ]; then
+          echo "Uploading: $FILE"
+          filen-cli upload "$FILE" OpenWrt/OpenWrt-24.10
+        fi
+        done
+        filen-cli ls -l OpenWrt/OpenWrt-24.10
+    - name: Delete workflow runs
+      uses: Mattraks/delete-workflow-runs@main
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        repository: ${{ github.repository }}
+        retain_days: 0
+        keep_minimum_runs: 2
