@@ -15,6 +15,7 @@ if curl -s "https://$mirror/openwrt/23-config-common" | grep -q "^CONFIG_PACKAGE
 git clone https://github.com/hudra0/qosmate package/new/qosmate
 git clone https://github.com/JohnsonRan/luci-app-qosmate package/new/luci-app-qosmate
 sed -i 's/option enabled '1'/option enabled '0'/g' package/new/qosmate/etc/config/qosmate
+git clone https://$github/openwrt/openwrt master/openwrt --depth=1
 rm -rf package/network/utils/iproute2
 cp -a ../master/openwrt/package/network/utils/iproute2 package/network/utils/iproute2
 fi
