@@ -24,31 +24,10 @@ endgroup() {
 #  NanoPi R4S OpenWrt Build Script  #
 #####################################
 
-# IP Location
-ip_info=`curl -sk https://ip.cooluc.com`;
-[ -n "$ip_info" ] && export isCN=`echo $ip_info | grep -Po 'country_code\":"\K[^"]+'` || export isCN=US
-
 # script url
-if [ "$isCN" = "CN" ]; then
-    export mirror=https://init.cooluc.com
-else
-    export mirror=https://init2.cooluc.com
-fi
-
-# github actions - caddy server
-if [ "$(whoami)" = "runner" ] && [ -z "$git_password" ]; then
-    export mirror=http://127.0.0.1:8080
-fi
-
-# private gitea
+export mirror=http://127.0.0.1:8080
 export gitea=git.cooluc.com
-
-# github mirror
-if [ "$isCN" = "CN" ]; then
-    export github="ghp.ci/github.com"
-else
-    export github="github.com"
-fi
+export github=github.com
 
 # Check root
 if [ "$(id -u)" = "0" ]; then
