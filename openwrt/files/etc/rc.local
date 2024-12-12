@@ -1,0 +1,5 @@
+ethtool -K eth0 tx-udp-segmentation on rx-udp-gro-forwarding on rx-gro-list off tx-nocache-copy on gro on gso on tso on sg on rx on tx on
+ethtool -K eth1 tx-udp-segmentation on rx-udp-gro-forwarding on rx-gro-list off tx-nocache-copy on gro on gso on tso on sg on rx on tx on
+ethtool -K nikki tx-udp-segmentation on rx-udp-gro-forwarding on rx-gro-list off tx-nocache-copy on gro on gso on tso on sg on rx on tx on
+
+exit 0
