@@ -1,0 +1,11 @@
+uci batch << EOF
+set watchcat.@watchcat[0]=watchcat
+set watchcat.@watchcat[0].mode='restart_iface'
+set watchcat.@watchcat[0].period='1m'
+set watchcat.@watchcat[0].pinghosts='223.5.5.5'
+set watchcat.@watchcat[0].addressfamily='ipv4'
+set watchcat.@watchcat[0].pingperiod='10'
+set watchcat.@watchcat[0].pingsize='standard'
+set watchcat.@watchcat[0].interface='pppoe-wan'
+commit
+EOF
