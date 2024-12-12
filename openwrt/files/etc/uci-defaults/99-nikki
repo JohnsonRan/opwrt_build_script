@@ -1,0 +1,9 @@
+uci batch << EOF
+set nikki.mixin.dns_mode='redir-host'
+set nikki.proxy.transparent_proxy='0'
+delete nikki.mixin.ipv6
+delete nikki.mixin.dns_ipv6
+set nikki.mixin.fake_ip_range='28.0.0.1/8'
+set nikki.mixin.ui_url='https://raw.ihtw.moe/https://github.com/Zephyruso/zashboard/archive/refs/heads/gh-pages.zip'
+commit
+EOF
