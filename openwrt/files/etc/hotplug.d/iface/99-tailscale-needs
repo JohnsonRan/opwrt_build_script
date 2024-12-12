@@ -1,0 +1,10 @@
+#!/bin/sh
+
+[ "$ACTION" = "ifup" -a "$INTERFACE" = "wan" ] && {
+    sleep 3
+    NETDEV=$(ip -o route get 223.5.5.5 | cut -f 5 -d " ")
+    ethtool -K $NETDEV rx-udp-gro-forwarding on rx-gro-list off
+    service tailscale restart
+    service log restart
+    logger "Configured $NETDEV for tailscale"
+}
