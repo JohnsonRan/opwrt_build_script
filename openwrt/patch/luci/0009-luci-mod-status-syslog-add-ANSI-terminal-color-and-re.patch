@@ -1,0 +1,133 @@
+--- a/modules/luci-base/htdocs/luci-static/resources/tools/views.js	2026-05-08 19:18:57.887541587 +0900
++++ b/modules/luci-base/htdocs/luci-static/resources/tools/views.js	2026-06-25 10:56:41.206700542 +0900
+@@ -121,8 +121,54 @@
+ 					return this.invertLogTextSearch ? !match : match;
+ 				});
+ 
++				const severityColors = {
++					emerg: ['#ff5555', true],
++					alert: ['#ff5555', true],
++					crit:  ['#ff5555', true],
++					err:   ['#ff5555', true],
++					warn:  ['#ffffff', true],
++				};
++
++				const coloredValue = loglines?.map(line => {
++					let remainText = line;
++
++					let timeHtml = '';
++					const tMatch = remainText.match(/^(\[[^\]]+\])\s*/);
++					if (tMatch) {
++						const safeTime = tMatch[1].replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
++						timeHtml = `<span style="color: #55ff55 !important; margin-right: 8px;">${safeTime}</span>`;
++						remainText = remainText.substring(tMatch[0].length);
++					}
++
++					let tagHtml = '';
++					let bodyHtml = '';
++
++					const delimiterIdx = remainText.indexOf(': ');
++					if (delimiterIdx > 0) {
++						const rawTag = remainText.substring(0, delimiterIdx + 1);
++						const rawBody = remainText.substring(delimiterIdx + 1);
++
++						const safeTag = rawTag.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
++						let safeBody = rawBody.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
++
++						tagHtml = `<span style="color: #ffff55 !important;">${safeTag}</span>`;
++
++						const sevMatch = rawTag.match(/\.(emerg|alert|crit|err|warn|notice|info|debug)\s*:/i);
++						const sev = sevMatch ? sevMatch[1].toLowerCase() : '';
++						const [color, bold] = severityColors[sev] ?? ['#ffffff', false];
++						safeBody = `<span style="color: ${color} !important;${bold ? ' font-weight: bold;' : ''}">${safeBody}</span>`;
++						bodyHtml = safeBody;
++					} else {
++						let safeBody = remainText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
++						safeBody = `<span style="color: #ffffff !important;">${safeBody}</span>`;
++						bodyHtml = safeBody;
++					}
++
++					return `<div style="line-height: 1.6; min-height: 22px; white-space: pre; word-wrap: normal;">${timeHtml}${tagHtml}${bodyHtml}</div>`;
++				}).join('');
++
+ 				return {
+-					value: loglines?.join('\n'),
++					value: coloredValue,
+ 					rows: loglines?.length + 1
+ 				};
+ 			}
+@@ -139,8 +185,7 @@
+ 			const element = document.getElementById('syslog');
+ 			if (element) {
+ 				const log = await this.retrieveLog();
+-				element.value = log?.value;
+-				element.rows = log?.rows;
++				element.innerHTML = log?.value;
+ 			}
+ 		},
+ 
+@@ -158,7 +203,10 @@
+ 				}, _('Scroll to tail', 'scroll to bottom (the tail) of the log file')
+ 			);
+ 			scrollDownButton.addEventListener('click', () => {
+-				scrollUpButton.scrollIntoView();
++				const container = document.getElementById('syslog');
++				if (container) {
++					container.scrollTop = container.scrollHeight;
++				}
+ 				scrollDownButton.blur();
+ 			});
+ 
+@@ -168,8 +216,11 @@
+ 				}, _('Scroll to head', 'scroll to top (the head) of the log file')
+ 			);
+ 			scrollUpButton.addEventListener('click', () => {
+-				scrollDownButton.scrollIntoView();
+-				scrollUpButton.blur();		
++				const container = document.getElementById('syslog');
++				if (container) {
++					container.scrollTop = 0;
++				}
++				scrollUpButton.blur();
+ 			});
+ 
+ 			const self = this;
+@@ -249,6 +300,13 @@
+ 			filterTextInvert.addEventListener('change', handleLogFilterChange);
+ 			filterMaxRows.addEventListener('change', handleLogFilterChange);
+ 
++			setTimeout(() => {
++				const element = document.getElementById('syslog');
++				if (element && loglines && loglines.value) {
++					element.innerHTML = loglines.value;
++				}
++			}, 50);
++
+ 			return E([], [
+ 				E('h2', {}, [ this.logName ]),
+ 				E('div', { 'id': 'content_syslog' }, [
+@@ -272,13 +330,18 @@
+ 						filterMaxRows,
+ 					]),
+ 					E('div', {'style': 'padding-bottom: 20px'}, [scrollDownButton]),
+-					E('textarea', {
++					E('pre', {
+ 						'id': 'syslog',
+-						'style': 'font-size:12px',
+-						'readonly': 'readonly',
+-						'wrap': 'off',
+-						'rows': loglines?.rows,
+-					}, [ loglines?.value ]),
++						'style': 'font-family: Consolas, "JetBrains Mono", Monaco, Menlo, monospace; ' +
++						         'font-size: 14px; ' +
++						         'font-weight: 500; ' +
++						         'letter-spacing: 0.3px; ' +
++						         'background-color: #141414 !important; ' +
++						         'color: #ffffff !important; ' +
++						         'padding: 14px; border-radius: 6px; ' +
++						         'max-height: 700px; overflow: auto; ' +
++						         'white-space: pre; word-wrap: normal;'
++					}, []),
+ 					E('div', {'style': 'padding-bottom: 20px'}, [scrollUpButton])
+ 				])
+ 			]);
