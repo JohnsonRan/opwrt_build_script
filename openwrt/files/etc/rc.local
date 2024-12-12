@@ -1,0 +1,3 @@
+/etc/init.d/komari-agent start
+
+exit 0
