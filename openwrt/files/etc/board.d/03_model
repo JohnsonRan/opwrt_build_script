@@ -1,0 +1,7 @@
+#!/bin/sh
+
+[ $(grep -c -i -E "Default string" /sys/class/dmi/id/product_name) -ge 1 ] && echo "Generic x86/64" > /tmp/sysinfo/model
+
+grep -q "nanopi-r5s" /etc/board.json && ucidef_set_interfaces_lan_wan 'eth0 eth1' 'eth2'
+
+exit 0
