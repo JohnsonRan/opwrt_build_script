@@ -31,34 +31,11 @@ fi
 #  NanoPi R4S OpenWrt Build Script  #
 #####################################
 
-# IP Location
-ip_info=`curl -sk https://ip.cooluc.com`;
-[ -n "$ip_info" ] && export isCN=`echo $ip_info | grep -Po 'country_code\":"\K[^"]+'` || export isCN=US
-
 # script url
-if [ "$isCN" = "CN" ]; then
-    export mirror=https://init3.cooluc.com
-else
-    export mirror=https://init3.cooluc.com
-fi
-
-# github actions - caddy server
-if [ "$(whoami)" = "runner" ] && [ "$git_name" != "private" ]; then
-    export mirror=http://127.0.0.1:8080
-fi
-
-# private gitea
+export mirror="https://raw.githubusercontent.com/JohnsonRan/opwrt_build_script/master"
 export gitea="git.cooluc.com"
-
-# github mirror
-if [ "$isCN" = "CN" ]; then
-    # There is currently no stable gh proxy
-    export github="github.com"
-    code_mirror="git.cooluc.com"
-else
-    export github="github.com"
-    code_mirror="github.com"
-fi
+export github="github.com"
+export code_mirror="github.com"
 
 # Check root
 if [ "$(id -u)" = "0" ]; then
