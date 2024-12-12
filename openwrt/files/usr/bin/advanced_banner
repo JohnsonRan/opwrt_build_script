@@ -1,0 +1,174 @@
+#!/bin/sh
+
+# ANSI颜色定义
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+PURPLE='\033[0;35m'
+BOLD='\033[1m'
+DIM='\033[2m'
+NC='\033[0m'
+WHITE='\033[1;37m'
+
+# 获取系统信息
+HOSTNAME=$(uci get system.@system[0].hostname)
+
+# 计算系统运行时间(天小时分钟格式)
+UPTIME_SEC=$(cat /proc/uptime | awk '{print int($1)}')
+UPTIME_DAYS=$((UPTIME_SEC / 86400))
+UPTIME_HOURS=$(( (UPTIME_SEC % 86400) / 3600 ))
+UPTIME_MINUTES=$((UPTIME_SEC % 3600 / 60))
+
+# 格式化运行时间，只显示非零部分
+UPTIME_FORMATTED=""
+[ $UPTIME_DAYS -gt 0 ] && UPTIME_FORMATTED="${UPTIME_DAYS}Days "
+[ $UPTIME_HOURS -gt 0 ] && UPTIME_FORMATTED="${UPTIME_FORMATTED}${UPTIME_HOURS}Hrs "
+[ $UPTIME_MINUTES -gt 0 ] && UPTIME_FORMATTED="${UPTIME_FORMATTED}${UPTIME_MINUTES}Mins"
+[ -z "$UPTIME_FORMATTED" ] && UPTIME_FORMATTED="0Mins"
+
+# CPU信息（频率、负载、温度）
+CPU_FREQ=$(($(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq 2>/dev/null || echo 0) / 1000))"MHz"
+CPU_LOAD=$(top -bn1 | grep "CPU:" | awk '{printf "%5.1f%%", $2}')
+CPU_TEMP_VALUE=$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null || echo 0)
+CPU_TEMP_VALUE=$((CPU_TEMP_VALUE / 1000))
+CPU_TEMP="${CPU_TEMP_VALUE}°C"
+
+# 根据温度区间选择颜色
+get_temp_color() {
+    local temp=$1
+    if [ "$temp" -lt 45 ]; then
+        echo "$GREEN"  # 低温：绿色
+    elif [ "$temp" -lt 60 ]; then
+        echo "$YELLOW" # 中温：黄色
+    else
+        echo "$RED"    # 高温：红色
+    fi
+}
+
+# 获取CPU温度对应颜色
+CPU_TEMP_COLOR=$(get_temp_color "$CPU_TEMP_VALUE")
+
+# 内存信息
+MEM_USED=$(free -m | awk 'NR==2{printf "%.1f", $3}')
+MEM_TOTAL=$(free -m | awk 'NR==2{printf "%.1f", $2}')
+MEM_PERCENT=$(free -m | awk 'NR==2{printf "%3d%%", $3*100/$2}')
+
+# 磁盘信息
+DISK_USED=$(df -h / | awk 'NR==2{print $3}')
+DISK_TOTAL=$(df -h / | awk 'NR==2{print $2}')
+DISK_PERCENT=$(df -h / | awk 'NR==2{print $5}')
+
+# 网络接口配置
+WAN_IFACE="pppoe-wan"
+LAN_IFACE="br-lan"
+
+# 获取网络流量
+get_traffic() {
+    local iface=$1
+    local rx_bytes=$(cat /sys/class/net/$iface/statistics/rx_bytes 2>/dev/null || echo 0)
+    local tx_bytes=$(cat /sys/class/net/$iface/statistics/tx_bytes 2>/dev/null || echo 0)
+    echo "$rx_bytes $tx_bytes"
+}
+
+# 计算流量差值
+calc_traffic() {
+    local rx_bytes=$1
+    local tx_bytes=$2
+    local rx_mb=$(awk "BEGIN {printf \"%.2f\", $rx_bytes/1024/1024}")
+    local tx_mb=$(awk "BEGIN {printf \"%.2f\", $tx_bytes/1024/1024}")
+    
+    # 根据流量大小选择适当的单位(MB、GB、TB)
+    local rx_unit="MB"
+    local tx_unit="MB"
+    
+    # 接收流量单位转换
+    if [ $(awk "BEGIN {print ($rx_mb >= 1024*1024) ? 1 : 0}") -eq 1 ]; then
+        # 转换为TB
+        rx_mb=$(awk "BEGIN {printf \"%.2f\", $rx_mb/1024/1024}")
+        rx_unit="TB"
+    elif [ $(awk "BEGIN {print ($rx_mb >= 1024) ? 1 : 0}") -eq 1 ]; then
+        # 转换为GB
+        rx_mb=$(awk "BEGIN {printf \"%.2f\", $rx_mb/1024}")
+        rx_unit="GB"
+    fi
+    
+    # 发送流量单位转换
+    if [ $(awk "BEGIN {print ($tx_mb >= 1024*1024) ? 1 : 0}") -eq 1 ]; then
+        # 转换为TB
+        tx_mb=$(awk "BEGIN {printf \"%.2f\", $tx_mb/1024/1024}")
+        tx_unit="TB"
+    elif [ $(awk "BEGIN {print ($tx_mb >= 1024) ? 1 : 0}") -eq 1 ]; then
+        # 转换为GB
+        tx_mb=$(awk "BEGIN {printf \"%.2f\", $tx_mb/1024}")
+        tx_unit="GB"
+    fi
+    
+    echo "$rx_mb $rx_unit $tx_mb $tx_unit"
+}
+
+# 获取当前流量
+WAN_TRAFFIC=$(get_traffic "$WAN_IFACE")
+LAN_TRAFFIC=$(get_traffic "$LAN_IFACE")
+
+# 转换为适当的单位(MB或GB)
+WAN_TRAFFIC_CALC=$(calc_traffic "$(echo "$WAN_TRAFFIC" | awk '{print $1}')" "$(echo "$WAN_TRAFFIC" | awk '{print $2}')")
+LAN_TRAFFIC_CALC=$(calc_traffic "$(echo "$LAN_TRAFFIC" | awk '{print $1}')" "$(echo "$LAN_TRAFFIC" | awk '{print $2}')")
+
+WAN_RX_VALUE=$(echo "$WAN_TRAFFIC_CALC" | awk '{print $1}')
+WAN_RX_UNIT=$(echo "$WAN_TRAFFIC_CALC" | awk '{print $2}')
+WAN_TX_VALUE=$(echo "$WAN_TRAFFIC_CALC" | awk '{print $3}')
+WAN_TX_UNIT=$(echo "$WAN_TRAFFIC_CALC" | awk '{print $4}')
+
+LAN_RX_VALUE=$(echo "$LAN_TRAFFIC_CALC" | awk '{print $1}')
+LAN_RX_UNIT=$(echo "$LAN_TRAFFIC_CALC" | awk '{print $2}')
+LAN_TX_VALUE=$(echo "$LAN_TRAFFIC_CALC" | awk '{print $3}')
+LAN_TX_UNIT=$(echo "$LAN_TRAFFIC_CALC" | awk '{print $4}')
+
+# 进度条函数 (0-100)
+progress_bar() {
+    local width=20
+    local percent=${1:-0}  # 如果参数为空，默认为0
+    
+    # 确保 percent 是一个数字
+    if ! [ "$percent" -eq "$percent" ] 2>/dev/null; then
+        percent=0
+    fi
+    
+    local filled=$((width * percent / 100))
+    local empty=$((width - filled))
+    printf "["
+    printf "%${filled}s" "" | sed 's/ /■/g'
+    printf "%${empty}s" "" | sed 's/ /□/g'
+    printf "] %3d%%" "$percent"
+}
+
+# CPU/内存/磁盘进度条
+CPU_PERCENT=$(top -bn1 | grep "CPU:" | awk '{print int($2)}' 2>/dev/null || echo 0)
+CPU_BAR=$(progress_bar "$CPU_PERCENT")
+
+MEM_PERCENT=$(free -m | awk 'NR==2{printf "%.0f", $3*100/$2}' 2>/dev/null || echo 0)
+MEM_BAR=$(progress_bar "$MEM_PERCENT")
+
+DISK_PERCENT=$(df / | awk 'NR==2{print $5}' | tr -d '%' 2>/dev/null || echo 0)
+DISK_BAR=$(progress_bar "$DISK_PERCENT")
+
+TOP_PROCESSES=$(ps -eo pid,pcpu,rss,comm --sort=-rss | head -4 | tail -3 | awk '{printf "  %-6s %-18s %8.1f%% %8.1fMB\n", $1, $4, $2, $3/1024}')
+
+echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║   ${BOLD}${WHITE}OpenWrt ${BLUE}Status Dashboard${NC} ${DIM}$(date +"%Y-%m-%d %H:%M:%S")${NC}"
+echo -e "${CYAN}╠══════════════════════════════════════════════════════════════╣${NC}"
+echo -e "${CYAN}║${NC} ${GREEN}🌐 Hostname: ${NC}${HOSTNAME:0:40}${NC}"
+echo -e "${CYAN}║${NC} ${GREEN}⏱  Uptime:   ${NC}${UPTIME_FORMATTED:0:40}${NC}"
+echo -e "${CYAN}║${NC} ${GREEN}🔥 CPU:      ${NC}${CPU_FREQ}  ${CPU_LOAD} ${YELLOW}$CPU_BAR${NC}  ${CPU_TEMP_COLOR}$CPU_TEMP${NC}"
+echo -e "${CYAN}║${NC} ${GREEN}💾 RAM:      ${NC}${MEM_USED}/${MEM_TOTAL} MB  ${YELLOW}$MEM_BAR${NC}"
+echo -e "${CYAN}║${NC} ${GREEN}💿 Disk:     ${NC}${DISK_USED}/${DISK_TOTAL}  ${YELLOW}$DISK_BAR${NC}"
+echo -e "${CYAN}╠══════════════════════════════════════════════════════════════╣${NC}"
+echo -e "${CYAN}║${NC} ${PURPLE}📶 Network Traffic:${NC}"
+echo -e "${CYAN}║${NC} ${BLUE}LAN (br-lan):${NC}    ${GREEN}▲${NC} ${LAN_TX_VALUE} ${LAN_TX_UNIT}  ${GREEN}▼${NC} ${LAN_RX_VALUE} ${LAN_RX_UNIT}"
+echo -e "${CYAN}║${NC} ${BLUE}WAN (pppoe-wan):${NC}  ${GREEN}▲${NC} ${WAN_TX_VALUE} ${WAN_TX_UNIT}  ${GREEN}▼${NC} ${WAN_RX_VALUE} ${WAN_RX_UNIT}"
+echo -e "${CYAN}╠══════════════════════════════════════════════════════════════╣${NC}"
+echo -e "${CYAN}║${NC} ${BLUE}📊 Top 3 Processes (by Mem):${NC}"
+echo -e "${CYAN}║${NC}${TOP_PROCESSES}"
+echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
