@@ -1,0 +1,4 @@
+uci batch << EOF
+del network.globals.ula_prefix
+commit
+EOF

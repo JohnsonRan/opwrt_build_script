@@ -143,3 +143,9 @@ curl -s $mirror/openwrt/patch/packages-patches/kselftests-bpf/Makefile > package
 # sms-tools
 mkdir -p feeds/packages/utils/sms-tool/patches
 curl -s $mirror/openwrt/patch/packages-patches/sms-tools/900-fix-incompatible-pointer-type-error-for-signal-function.patch > feeds/packages/utils/sms-tool/patches/900-fix-incompatible-pointer-type-error-for-signal-function.patch
+
+# oniguruma
+rm -rf package/feeds/packages/oniguruma
+git clone https://github.com/openwrt/packages --depth=1 master_packages
+mv master_packages/libs/oniguruma package/feeds/packages
+rm -rf master_packages

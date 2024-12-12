@@ -1,0 +1,5 @@
+#!/bin/sh
+
+[ $(grep -c -i -E "Default string" /sys/class/dmi/id/product_name) -ge 1 ] && echo "Generic x86/64" > /tmp/sysinfo/model
+
+exit 0
