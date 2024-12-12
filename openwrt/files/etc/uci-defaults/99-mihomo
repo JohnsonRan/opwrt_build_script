@@ -1,0 +1,20 @@
+uci batch << EOF
+set mihomo.config.start_delay='3'
+set mihomo.config.mixin='0'
+set mihomo.config.test_profile='0'
+set mihomo.config.fast_reload='0'
+set mihomo.proxy.tcp_transparent_proxy_mode='redirect'
+set mihomo.proxy.udp_transparent_proxy_mode='tun'
+set mihomo.proxy.ipv6_proxy='0'
+set mihomo.proxy.bypass_china_mainland_ip='0'
+set mihomo.mixin.log_level='warning'
+set mihomo.mixin.ipv6='0'
+set mihomo.mixin.dns_mode='redir-host'
+set mihomo.mixin.dns_ipv6='0'
+set mihomo.mixin.ui_name='zashboard'
+set mihomo.mixin.ui_url='https://raw.e11z.net/https://github.com/Zephyruso/zashboard/archive/refs/heads/gh-pages.zip'
+set mihomo.mixin.tun_stack='system'
+set mihomo.mixin.tun_gso='0'
+set mihomo.mixin.tun_endpoint_independent_nat='1'
+commit
+EOF
