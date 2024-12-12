@@ -42,7 +42,7 @@ grep HASH include/kernel-6.12 | awk -F'HASH-' '{print $2}' | awk '{print $1}' | 
 # kernel generic patches
 curl -s $mirror/openwrt/patch/kernel-6.12/openwrt/linux-6.12-target-linux-generic.patch | patch -p1
 local_kernel_version=$(sed -n 's/^LINUX_KERNEL_HASH-\([0-9.]\+\) = .*/\1/p' include/kernel-6.12)
-release_kernel_version=$(curl -sL https://raw.githubusercontent.com/sbwml/r4s_build_script/master/tags/kernel-6.12 | sed -n 's/^LINUX_KERNEL_HASH-\([0-9.]\+\) = .*/\1/p')
+release_kernel_version=$(curl -sL "https://raw.githubusercontent.com/${{ github.repository }}/master/tags/kernel-6.12" | sed -n 's/^LINUX_KERNEL_HASH-\([0-9.]\+\) = .*/\1/p')
 if [ "$local_kernel_version" = "$release_kernel_version" ] && [ -z "$git_password" ] && [ "$(whoami)" != "sbwml" ]; then
     git clone https://$github/sbwml/target_linux_generic -b openwrt-24.10 target/linux/generic-6.12 --depth=1
 else
