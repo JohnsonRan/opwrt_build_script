@@ -1,0 +1,6 @@
+uci batch << EOF
+set system.led_wan.dev='eth2'
+set system.led_lan1.dev='eth1'
+set system.led_lan2.dev='eth0'
+commit
+EOF
