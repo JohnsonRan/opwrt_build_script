@@ -1,0 +1,4 @@
+/etc/init.d/komari-agent start
+/usr/sbin/smartdns -c /etc/smartdns/smartdns.conf
+
+exit 0

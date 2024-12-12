@@ -1,0 +1,5 @@
+uci batch << EOF
+del network.globals.ula_prefix
+del dhcp.lan.dns_service
+commit
+EOF

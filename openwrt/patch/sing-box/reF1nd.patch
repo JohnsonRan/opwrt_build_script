@@ -1,0 +1,63 @@
+diff --git a/momo/Makefile b/momo/Makefile
+index 8963db5..956f8bf 100644
+--- a/momo/Makefile
++++ b/momo/Makefile
+@@ -4,17 +4,37 @@ PKG_NAME:=momo
+ PKG_VERSION:=2025.12.31
+ PKG_RELEASE:=1
+ 
++PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
++PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
++PKG_SOURCE_PROTO:=git
++PKG_SOURCE_URL:=https://github.com/reF1nd/sing-box.git
++PKG_SOURCE_VERSION:=reF1nd-dev
++PKG_MIRROR_HASH:=skip
++
++PKG_LATEST_TAG:=$(shell curl -sL https://api.github.com/repos/reF1nd/sing-box/tags | jq -r '.[].name | select(contains("reF1nd"))' | head -n 1 | sed 's/^v//')
++
+ PKG_LICENSE:=GPL-3.0+
+ PKG_MAINTAINER:=Joseph Mory <morytyann@gmail.com>
+ 
++PKG_BUILD_DEPENDS:=golang/host
++PKG_BUILD_PARALLEL:=1
++PKG_BUILD_FLAGS:=no-mips16
++
++GO_PKG:=github.com/sagernet/sing-box
++GO_PKG_BUILD_PKG:=$(GO_PKG)/cmd/sing-box
++GO_PKG_LDFLAGS_X:=$(GO_PKG)/constant.Version=$(PKG_LATEST_TAG)
++GO_PKG_TAGS:=with_quic,with_utls,with_gvisor,with_clash_api,with_musl
++
+ include $(INCLUDE_DIR)/package.mk
++include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
+ 
+ define Package/momo
+   SECTION:=net
+   CATEGORY:=Network
+   TITLE:=The universal proxy platform.
+   URL:=https://sing-box.sagernet.org
+-  DEPENDS:=+ca-bundle +curl firewall4 +ip-full +kmod-inet-diag +kmod-nft-socket +kmod-nft-tproxy +kmod-tun +sing-box
++  DEPENDS:=+ca-bundle +curl firewall4 +ip-full +kmod-inet-diag +kmod-nft-socket +kmod-nft-tproxy +kmod-tun
++  PROVIDES:=momo
+ endef
+ 
+ define Package/momo/description
+@@ -26,6 +46,8 @@ define Package/momo/conffiles
+ endef
+ 
+ define Package/momo/install
++	$(call GoPackage/Package/Install/Bin,$(1))
++	
+ 	$(INSTALL_DIR) $(1)/etc/momo
+ 	$(INSTALL_DIR) $(1)/etc/momo/ucode
+ 	$(INSTALL_DIR) $(1)/etc/momo/scripts
+@@ -58,8 +80,5 @@ define Package/momo/install
+ 	$(INSTALL_DATA) $(CURDIR)/files/momo.upgrade $(1)/lib/upgrade/keep.d/momo
+ endef
+ 
+-define Build/Compile
+-
+-endef
+-
++$(eval $(call GoBinPackage,momo))
+ $(eval $(call BuildPackage,momo))
+\ No newline at end of file
