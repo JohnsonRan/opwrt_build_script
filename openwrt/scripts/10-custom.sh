@@ -48,7 +48,8 @@ fi
 
 # luci-app-3cat
 git clone https://$github/immortalwrt/luci imm-luci --depth=1
-mv imm-luci/applications/luci-app-3cat package/new/luci-app-3cat
+mv imm-luci/applications/luci-app-3cat package/new
+rm -rf imm-luci
 
 # extra packages
 git clone https://$github/JohnsonRan/packages_utils_boltbrowser package/new/boltbrowser
