@@ -107,6 +107,14 @@ curl -skLo package/base-files/files/etc/banner https://github.com/JohnsonRan/opw
 curl -skLo files/usr/bin/advanced_banner https://github.com/JohnsonRan/opwrt_build_script/raw/master/openwrt/files/usr/bin/advanced_banner
 chmod +x files/usr/bin/advanced_banner
 
+# erofs rootfs image generation
+curl -skL https://github.com/openwrt/openwrt/pull/19244.patch | git apply --reject
+curl -skL https://github.com/openwrt/openwrt/pull/19501.patch | git apply --reject
+git clone https://github.com/openwrt/openwrt main_openwrt --depth=1
+rm -rf package/system/fstools
+mv main_openwrt/package/system/fstools package/system
+rm -rf main_openwrt
+
 # from pmkol/openwrt-plus
 # configure default-settings
 #sed -i 's/openwrt\/luci/JohnsonRan\/opwrt_build_script/g' package/new/luci-theme-argon/luci-theme-argon/luasrc/view/themes/argon/footer.htm
