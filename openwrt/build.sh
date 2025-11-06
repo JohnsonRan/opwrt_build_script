@@ -32,7 +32,7 @@ fi
 #####################################
 
 # script url
-export mirror="https://raw.githubusercontent.com/JohnsonRan/opwrt_build_script/master"
+export mirror="https://raw.githubusercontent.com/JohnsonRan/opwrt_build_script/linux-6.18"
 export gitea="git.cooluc.com"
 export github="github.com"
 export code_mirror="github.com"
