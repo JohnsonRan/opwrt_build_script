@@ -30,6 +30,7 @@ if curl -s "$mirror/openwrt/24-config-common" | grep -q "^CONFIG_PACKAGE_luci-ap
     unzip -qq gh-pages.zip
     mv zashboard-gh-pages files/etc/momo/run/ui/zashboard
     rm -rf gh-pages.zip
+    curl -skL https://github.com/JohnsonRan/opwrt_build_script/raw/linux-6.18/openwrt/files/patch/reF1nd.patch | git -C package/new/openwrt-momo/momo apply
 fi
 
 # tailscale
